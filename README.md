@@ -155,3 +155,65 @@ M365 に Keycloak で SAML 認証するための設定
 ### saml エンドポイントの確認
 
 Realm setting > General > Endpoints > SAML 2.0 Identity Provider Metadata リンクから確認
+
+## M365 (SP) の SAML フェデレーションを設定
+
+- Microsoft Graph PowerShell のインストール & 接続
+
+```powershell
+Install-Module Microsoft.Graph
+Connect-MgGraph -Scopes "Domain.ReadWrite.All", "Policy.ReadWrite.TrustFramework"
+
+# 接続し直したいとき
+Disconnect-MgGraph
+```
+
+## 2. ドメインのフェデレーション設定
+
+- Keycloak を IdP として構成するために、Azure AD にフェデレーション設定を適用します。
+
+```powershell
+$domain = "yourdomain.com"
+$issuerUri = "https://keycloak.example.com/auth/realms/your-realm"
+$metadataUrl = "https://keycloak.example.com/auth/realms/your-realm/protocol/saml/descriptor"
+$SigningCertificate = "<Base64エンコードされた証明書>"
+
+$params = @{
+    IssuerUri            = $issuerUri
+    PassiveSignInUri     = "$issuerUri/protocol/saml"
+    MetadataExchangeUri  = $metadataUrl
+    PreferredAuthenticationProtocol = "saml"
+    SigningCertificate   = $SigningCertificate
+}
+
+New-MgDomainFederationConfiguration -DomainId $domain @params
+```
+
+### 設定の確認
+
+フェデレーション設定が正しく適用されたかを確認するには、以下のコマンドを実行します。
+
+```powershell
+Get-MgDomainFederationConfiguration -DomainId $domain
+```
+
+### フェデレーション解除（必要に応じて）
+
+Azure AD で直接認証するように戻す場合は、以下のコマンドを実行します。
+
+```powershell
+Remove-MgDomainFederationConfiguration -DomainId $domain
+```
+
+### 補足
+
+- <Base64 エンコードされた証明書> には Keycloak の SAML IdP 証明書を Base64 でエンコードして設定。
+- IssuerUri には Keycloak の EntityID を指定。
+- MetadataExchangeUri に SAML メタデータ URL を指定。
+- PassiveSignInUri に SAML 認証エンドポイントを指定。
+
+## その他
+
+- [keycloak/keycloak - Docker Image | Docker Hub](https://hub.docker.com/r/keycloak/keycloak)
+- [AzureRM PowerShell モジュールの提供終了の概要 | Microsoft Learn](https://learn.microsoft.com/ja-jp/powershell/azure/azurerm-retirement-overview?view=azps-13.1.0)
+- [重要なお知らせ: Azure AD PowerShell および MSOnline PowerShell モジュールの廃止 | Japan Azure Identity Support Blog](https://jpazureid.github.io/blog/azure-active-directory/important-update-deprecation-of-azure-ad-powershell-and-msonline/)
