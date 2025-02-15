@@ -73,10 +73,13 @@ resource "aws_instance" "keycloak" {
         image: keycloak/keycloak:latest
         container_name: keycloak
         environment:
-          - KEYCLOAK_ADMIN=${var.keycloak_admin}
-          - KEYCLOAK_ADMIN_PASSWORD=${var.keycloak_admin_password}
+          - KC_BOOTSTRAP_ADMIN_USERNAME=${var.keycloak_admin}
+          - KC_BOOTSTRAP_ADMIN_PASSWORD=${var.keycloak_admin_password}
+          - KC_HOSTNAME=https://keycloak.kikudai.work
+          - KC_HOSTNAME_DEBUG=true
+          - KC_LOG_LEVEL=debug
         ports:
-          - "8080:8080"
+          - "80:8080"
         command:
           - start-dev
     EOL
