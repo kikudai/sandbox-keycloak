@@ -1,21 +1,27 @@
 module "network" {
   source = "./modules/network"
+  # 必要な変数を設定
 }
 
-module "compute" {
-  source   = "./modules/compute"
-  vpc_id   = module.network.vpc_id
-  subnet_id = module.network.subnet_id
-  vpc_cidr = var.vpc_cidr
-  allowed_ssh_cidr = var.allowed_ssh_cidr
+module "keypair" {
+  source   = "./modules/keypair"
   key_name = var.key_name
 }
 
+module "compute" {
+  source            = "./modules/compute"
+  vpc_id            = module.network.vpc_id
+  subnet_id         = module.network.subnet_id
+  vpc_cidr          = var.vpc_cidr
+  allowed_ssh_cidr  = var.allowed_ssh_cidr
+  key_name          = module.keypair.key_name
+}
+
 module "alb" {
-  source = "./modules/alb"
-  vpc_id = module.network.vpc_id
-  subnet_id = module.network.subnet_id
-  domain_name = var.domain_name
-  manual_validation_fqdns = var.manual_validation_fqdns
-  instance_id = module.compute.instance_id
+  source                   = "./modules/alb"
+  vpc_id                   = module.network.vpc_id
+  subnet_id                = module.network.subnet_id
+  domain_name              = var.domain_name
+  manual_validation_fqdns  = var.manual_validation_fqdns
+  instance_id              = module.compute.instance_id
 }

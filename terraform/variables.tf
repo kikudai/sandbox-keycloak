@@ -10,7 +10,7 @@ variable "allowed_ssh_cidr" {
 }
 
 variable "key_name" {
-  description = "EC2 用 SSH キーペア名"
+  description = "キーペアの名前 (例: sandbox-keycloak)"
   type        = string
 }
 
@@ -20,7 +20,7 @@ variable "domain_name" {
 }
 
 variable "manual_validation_fqdns" {
-  description = "手動で作成した ACM DNS 検証レコード FQDN のリスト。DNS レコード作成後に設定してください。"
+  description = "手動で作成した ACM DNS 検証レコード FQDN のリスト"
   type        = list(string)
   default     = []
 }
