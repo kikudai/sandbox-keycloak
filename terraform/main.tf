@@ -15,8 +15,8 @@ module "compute" {
   vpc_cidr                = var.vpc_cidr
   allowed_ssh_cidr        = var.allowed_ssh_cidr
   key_name                = module.keypair.key_name
-  keycloak_admin          = module.compute.keycloak_admin
-  keycloak_admin_password = module.compute.keycloak_admin_password
+  keycloak_admin          = var.keycloak_admin
+  keycloak_admin_password = var.keycloak_admin_password
 }
 
 module "alb" {
