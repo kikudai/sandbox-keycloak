@@ -2,6 +2,8 @@
 
 ```bash
 terraform-keycloak/
+├── terraform.tfvars # 環境変数をファイル管理する場合
+├── terraform.tfvars.sample # 環境変数をファイルサンプル
 ├── main.tf          # ルートモジュール（各モジュールを呼び出す）
 ├── variables.tf     # ルート変数定義
 ├── outputs.tf       # ルート出力
@@ -14,7 +16,11 @@ terraform-keycloak/
     │   ├── main.tf
     │   ├── variables.tf
     │   └── outputs.tf
-    └── alb/
+    ├── alb/
+    │   ├── main.tf
+    │   ├── variables.tf
+    │   └── outputs.tf
+    └── keypair/
         ├── main.tf
         ├── variables.tf
         └── outputs.tf
@@ -22,54 +28,79 @@ terraform-keycloak/
 
 ## 構築フロー
 
-以下は、各ステージごとにターゲット指定で apply する場合の例です。  
-**※ 初回はルートディレクトリで `terraform init` を実行してください。**
+以下は、ルートディレクトリ（terraform-keycloak）での一連のコマンド実行フローの例です。  
+なお、モジュールごとに段階的に適用する方法と、全体を一括で apply する方法の両方を紹介します。
 
-### 1. ルートディレクトリで初期化
+---
+
+### 【全体を一括で適用する場合】
+
+1. **初期化**  
+   初回のみ、プラグインやプロバイダーをダウンロードするために実行します。
+
+   ```bash
+   terraform init
+   ```
+
+2. **プランの確認**  
+   全体の変更内容を確認します。
+
+   ```bash
+   terraform plan -out=tfplan
+   ```
+
+3. **適用**  
+   作成されたプランを元にリソースを作成します。
+   ```bash
+   terraform apply tfplan
+   ```
+
+---
+
+### 【モジュールごとに段階的に適用する場合】
+
+たとえば、以下の順番で段階的に apply する方法です。
+
+1. **ネットワークモジュールの適用**  
+   VPC、サブネット、IGW、ルートテーブルを作成します。
+
+   ```bash
+   terraform plan -target=module.network
+   terraform apply -target=module.network
+   ```
+
+2. **キーペアモジュールの適用**  
+   RSA キーペアを生成して AWS キーペアとして登録します。
+
+   ```bash
+   terraform plan -target=module.keypair
+   terraform apply -target=module.keypair
+   ```
+
+3. **コンピュートモジュールの適用**  
+   EC2 インスタンス（Keycloak 用）を作成します。
+
+   ```bash
+   terraform plan -target=module.compute
+   terraform apply -target=module.compute
+   ```
+
+4. **ALB モジュールの適用**  
+   ALB と ACM（DNS 検証は手動追加後）を作成します。  
+   ※ 初回実行後、出力される `cert_validation_options` を確認し、お名前ドットコム側で検証レコードを追加した上で、必要に応じて変数 `manual_validation_fqdns` を更新し、再度適用してください。
+   ```bash
+   terraform plan -target=module.alb
+   terraform apply -target=module.alb
+   ```
+
+---
+
+### 最終確認
+
+すべてのモジュールを適用した後、ルートディレクトリで以下のコマンドを実行し、変更がないことを確認します。
 
 ```bash
-terraform init
+terraform plan
 ```
 
-### 2. ステージ 1 – ネットワーク構築
-
-VPC、サブネット、IGW、ルートテーブルを作成します。
-
-```bash
-terraform plan -target=module.network
-terraform apply -target=module.network
-```
-
-### 3. ステージ 2 – EC2 インスタンス構築
-
-Compute モジュールで Keycloak 用の EC2 インスタンスを作成します。
-
-```bash
-terraform plan -target=module.compute
-terraform apply -target=module.compute
-```
-
-### 4. ステージ 3 – ALB ＋ ACM の構築
-
-ALB と ACM 証明書の作成を行います。  
-※ 初回 apply 後、出力される `cert_validation_options` を確認し、お名前ドットコムの DNS 管理画面で手動で検証用のレコードを追加してください。
-
-```bash
-terraform plan -target=module.alb
-terraform apply -target=module.alb
-```
-
-### 5. DNS 検証レコードの反映後
-
-お名前ドットコム側で検証用レコードを追加したら、  
-変数 `manual_validation_fqdns` に該当の FQDN（例：`_abcde.example.com.`）を設定し、再度 ALB モジュールのみ apply します。
-
-```bash
-terraform plan -target=module.alb
-terraform apply -target=module.alb
-```
-
-### 6. 最終確認
-
-出力された `alb_dns_name` をもとに、お名前ドットコム側でカスタムドメインの CNAME（または ALIAS）設定を行ってください。  
-また、出力の `keycloak_url_https` で HTTPS アクセスが可能なことを確認してください。
+また、出力される ALB の DNS 名や HTTPS 用の URL を元に、実際のアクセスや DNS の設定（お名前ドットコム側）も確認してください。
