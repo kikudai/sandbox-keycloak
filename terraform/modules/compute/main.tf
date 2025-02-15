@@ -1,3 +1,21 @@
+data "aws_ami" "amazon_linux" {
+  # 必要に応じて書き換えて下さい (ARM 用 / x86 用 など)
+  most_recent = true
+  owners      = ["137112412989"] # Amazon のオーナーID
+  filter {
+    name   = "name"
+    values = ["al2023-ami-2023.6.*-kernel-6.1-arm64"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["arm64"]
+  }
+}
+
 resource "aws_security_group" "ec2_sg" {
   name        = "keycloak-ec2-sg"
   description = "EC2 security group for Keycloak container"
@@ -7,9 +25,8 @@ resource "aws_security_group" "ec2_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]  # VPC 内からの ALB 経由のアクセスを許可
+    cidr_blocks = [var.vpc_cidr]  # ALB など同一 VPC 内からのアクセスを許可
   }
-
   ingress {
     from_port   = 22
     to_port     = 22
@@ -37,20 +54,20 @@ resource "aws_instance" "keycloak" {
     #!/bin/bash
     set -e
 
-    # Docker と Docker Compose のインストール
-    sudo yum update -y
-    sudo yum install -y docker
-    sudo systemctl enable docker
-    sudo systemctl start docker
-    sudo usermod -aG docker ec2-user
+    # システム更新 & Docker のインストール
+    yum update -y
+    yum install -y docker
+    systemctl enable docker
+    systemctl start docker
+    usermod -aG docker ec2-user
 
     # Docker Compose のインストール
-    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
+    curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
 
-    # `docker-compose.yml` を配置
+    # docker-compose.yml 作成
     cat <<EOL > /home/ec2-user/docker-compose.yml
-    version: '3.8'
+    version: '3'
     services:
       keycloak:
         image: keycloak/keycloak:latest
@@ -64,9 +81,11 @@ resource "aws_instance" "keycloak" {
           - start-dev
     EOL
 
-    # docker-compose の実行
+    # ファイル所有者を ec2-user に変更
+    chown ec2-user:ec2-user /home/ec2-user/docker-compose.yml
+
+    # ec2-user 権限で docker-compose up
     cd /home/ec2-user
-    sudo chown ec2-user:ec2-user docker-compose.yml
     sudo -u ec2-user docker-compose up -d
   EOF
 
