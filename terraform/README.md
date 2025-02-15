@@ -106,4 +106,5 @@ terraform-keycloak/
 terraform plan
 ```
 
-また、出力される ALB の DNS 名や HTTPS 用の URL を元に、実際のアクセスや DNS の設定（お名前ドットコム側）も確認してください。
+出力された alb_dns_name（ALB の DNS 名）を お名前ドットコムの CNAME に設定する。
+その後、HTTPS 用の URL にアクセスして keycloak を確認する。

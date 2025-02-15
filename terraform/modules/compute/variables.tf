@@ -1,10 +1,16 @@
-variable "vpc_id" {
-  description = "Network モジュールから渡される VPC の ID"
+variable "ami_id" {
+  description = "EC2 に使用する AMI ID"
   type        = string
 }
 
+variable "instance_type" {
+  description = "EC2 インスタンスタイプ"
+  type        = string
+  default     = "t4g.micro"
+}
+
 variable "subnet_id" {
-  description = "Network モジュールから渡されるサブネットの ID"
+  description = "EC2 インスタンスを配置するサブネット ID"
   type        = string
 }
 
@@ -20,6 +26,16 @@ variable "allowed_ssh_cidr" {
 }
 
 variable "key_name" {
-  description = "EC2 インスタンス用の SSH キーペア名"
+  description = "EC2 インスタンスの SSH キーペア名"
+  type        = string
+}
+
+variable "keycloak_admin" {
+  description = "Keycloak admin username"
+  type        = string
+}
+
+variable "keycloak_admin_password" {
+  description = "Keycloak admin password"
   type        = string
 }

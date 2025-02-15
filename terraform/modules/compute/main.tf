@@ -1,24 +1,3 @@
-data "aws_ami" "amazon_linux" {
-  most_recent = true
-  owners      = ["137112412989"]
-
-  filter {
-    name   = "name"
-    values = ["al2023-ami-2023.6.*-kernel-6.1-arm64"]
-
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-
-  filter {
-    name   = "architecture"
-    values = ["arm64"]
-  }
-}
-
 resource "aws_security_group" "ec2_sg" {
   name        = "keycloak-ec2-sg"
   description = "EC2 security group for Keycloak container"
@@ -47,23 +26,49 @@ resource "aws_security_group" "ec2_sg" {
 }
 
 resource "aws_instance" "keycloak" {
-  ami                         = data.aws_ami.amazon_linux.id
-  instance_type               = "t4g.micro"  # ARM 用インスタンス
+  ami                         = var.ami_id
+  instance_type               = var.instance_type
   subnet_id                   = var.subnet_id
   vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
   key_name                    = var.key_name
   associate_public_ip_address = true
 
-  user_data = <<EOF
-#!/bin/bash
-set -ex
-dnf update -y
-dnf install -y docker
-systemctl enable --now docker
-usermod -a -G docker ec2-user
-# Keycloak コンテナをホストの 80 番ポートにマッピング（内部では 8080 で動作）
-docker run -d --name keycloak -p 80:8080 quay.io/keycloak/keycloak:17.0.1 start-dev
-EOF
+  user_data = <<-EOF
+    #!/bin/bash
+    set -e
+
+    # Docker と Docker Compose のインストール
+    sudo yum update -y
+    sudo yum install -y docker
+    sudo systemctl enable docker
+    sudo systemctl start docker
+    sudo usermod -aG docker ec2-user
+
+    # Docker Compose のインストール
+    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+
+    # `docker-compose.yml` を配置
+    cat <<EOL > /home/ec2-user/docker-compose.yml
+    version: '3.8'
+    services:
+      keycloak:
+        image: keycloak/keycloak:latest
+        container_name: keycloak
+        environment:
+          - KEYCLOAK_ADMIN=${var.keycloak_admin}
+          - KEYCLOAK_ADMIN_PASSWORD=${var.keycloak_admin_password}
+        ports:
+          - "8080:8080"
+        command:
+          - start-dev
+    EOL
+
+    # docker-compose の実行
+    cd /home/ec2-user
+    sudo chown ec2-user:ec2-user docker-compose.yml
+    sudo -u ec2-user docker-compose up -d
+  EOF
 
   tags = {
     Name = "Keycloak-EC2"
