@@ -15,18 +15,22 @@ data "aws_subnet" "default" {
   id = data.aws_subnet_ids.default.ids[0]
 }
 
-# Amazon Linux 2 の最新AMIを取得
+# Amazon Linux 2023 の最新AMIを取得
 data "aws_ami" "amazon_linux" {
   most_recent = true
+  owners      = ["137112412989"]  # Amazon公式AMIのオーナーID
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+    values = ["al2023-ami-kernel-default-*"]
   }
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
   }
-  owners = ["137112412989"]  # Amazon公式AMI
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
 }
 
 # セキュリティグループの作成
@@ -65,16 +69,16 @@ resource "aws_instance" "keycloak" {
   instance_type          = "t2.micro"  # Free Tier対象
   subnet_id              = data.aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.keycloak_sg.id]
-  key_name               = var.key_name  # SSH接続用のキーペア名（事前作成済み）
+  key_name               = var.key_name  # 事前に作成済みのSSHキーペア名
 
   associate_public_ip_address = true
 
   # EC2起動時にDockerをインストールし、Keycloakコンテナを起動するUser Data
   user_data = <<-EOF
     #!/bin/bash
-    yum update -y
-    amazon-linux-extras install docker -y
-    service docker start
+    dnf update -y
+    dnf install -y docker
+    systemctl enable --now docker
     usermod -a -G docker ec2-user
     # Keycloak公式コンテナを起動（ホストの80番ポート → コンテナの8080番ポートにマッピング）
     docker run -d --name keycloak -p 80:8080 quay.io/keycloak/keycloak:17.0.1 start-dev
