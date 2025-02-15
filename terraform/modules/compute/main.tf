@@ -21,7 +21,7 @@ data "aws_ami" "amazon_linux" {
 
 resource "aws_security_group" "ec2_sg" {
   name        = "keycloak-ec2-sg"
-  description = "EC2 用セキュリティグループ（Keycloak コンテナ用）"
+  description = "EC2 security group for Keycloak container"
   vpc_id      = var.vpc_id
 
   ingress {
