@@ -6,7 +6,7 @@ provider "aws" {
 # 新規VPC, サブネット作成 #
 ###########################
 
-# VPCの作成（CIDRブロックを 10.1.0.0/16 に変更）
+# VPCの作成（CIDRブロックを 10.1.0.0/16 に設定）
 resource "aws_vpc" "keycloak_vpc" {
   cidr_block           = "10.1.0.0/16"
   enable_dns_support   = true
@@ -17,7 +17,7 @@ resource "aws_vpc" "keycloak_vpc" {
   }
 }
 
-# パブリックサブネットの作成（CIDRブロックを 10.1.1.0/24 に変更）
+# パブリックサブネットの作成（CIDRブロックを 10.1.1.0/24 に設定）
 resource "aws_subnet" "keycloak_public_subnet" {
   vpc_id                  = aws_vpc.keycloak_vpc.id
   cidr_block              = "10.1.1.0/24"
@@ -94,12 +94,12 @@ resource "aws_security_group" "keycloak_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # SSH (22番ポート) ※管理用。YOUR_IP/32 をご自身のIPに変更してください
+  # SSH (22番ポート) を allowed_ssh_cidr で許可
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["YOUR_IP/32"]
+    cidr_blocks = [var.allowed_ssh_cidr]
   }
 
   egress {

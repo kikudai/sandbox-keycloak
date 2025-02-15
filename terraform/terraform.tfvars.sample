@@ -1,0 +1,2 @@
+allowed_ssh_cidr = "xxx.xxx.xxx.xxx/32"
+key_name         = "your-keypair-name"
