@@ -86,12 +86,15 @@ terraform-keycloak/
    ```
 
 4. **ALB モジュールの適用**  
-   ALB と ACM（DNS 検証は手動追加後）を作成します。  
-   ※ 初回実行後、出力される `cert_validation_options` を確認し、お名前ドットコム側で検証レコードを追加した上で、必要に応じて変数 `manual_validation_fqdns` を更新し、再度適用してください。
+   ALB と ACM（DNS 検証は手動追加後）を作成します。
+
    ```bash
    terraform plan -target=module.alb
    terraform apply -target=module.alb
    ```
+
+   ※ terraform が実行中のままになるので、その間に AWS Certificate Manager（ACM）で作成されている証明書を確認し、お名前ドットコム側で検証用 CNAME レコードを追加する。
+   （CNAME レコードが反映されると terraform の実行中が進む）
 
 ---
 

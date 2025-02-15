@@ -1,4 +1,5 @@
-# ACM 証明書の作成（DNS 検証方式）
+# 1. ACM 証明書の作成（DNS 検証）
+#    → お名前ドットコムで手動で CNAME レコードを作成し、コンソール上で「発行済み」になればOK
 resource "aws_acm_certificate" "cert" {
   domain_name       = var.domain_name
   validation_method = "DNS"
@@ -8,22 +9,10 @@ resource "aws_acm_certificate" "cert" {
   }
 }
 
-# ※ 出力する検証情報をルートモジュールで確認し、お名前ドットコム側で手動追加してください
-output "cert_validation_options" {
-  description = "ACM 証明書の DNS 検証情報。手動で DNS レコードを追加してください。"
-  value       = aws_acm_certificate.cert.domain_validation_options
-}
-
-# ACM 証明書検証（手動で作成した DNS レコードが反映されたことを前提）
-resource "aws_acm_certificate_validation" "cert_validation" {
-  certificate_arn         = aws_acm_certificate.cert.arn
-  validation_record_fqdns = var.manual_validation_fqdns
-}
-
-# ALB 用セキュリティグループ
+# 2. ALB 用セキュリティグループ
 resource "aws_security_group" "alb_sg" {
   name        = "keycloak-alb-sg"
-  description = "ALB 用セキュリティグループ（HTTP/HTTPS）"
+  description = "ALB security group (HTTP/HTTPS)"
   vpc_id      = var.vpc_id
 
   ingress {
@@ -32,7 +21,6 @@ resource "aws_security_group" "alb_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   ingress {
     from_port   = 443
     to_port     = 443
@@ -48,7 +36,7 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# ALB の作成
+# 3. ALB の作成
 resource "aws_lb" "alb" {
   name               = "keycloak-alb"
   load_balancer_type = "application"
@@ -61,7 +49,7 @@ resource "aws_lb" "alb" {
   }
 }
 
-# ターゲットグループの作成（EC2 へ HTTP で転送）
+# 4. ターゲットグループ（EC2 へ HTTP で転送）
 resource "aws_lb_target_group" "tg" {
   name     = "keycloak-tg"
   port     = 80
@@ -79,20 +67,21 @@ resource "aws_lb_target_group" "tg" {
   }
 }
 
-# ターゲットグループへの EC2 アタッチメント
+# 5. ターゲットグループへの EC2 アタッチメント
 resource "aws_lb_target_group_attachment" "tg_attachment" {
   target_group_arn = aws_lb_target_group.tg.arn
   target_id        = var.instance_id
   port             = 80
 }
 
-# HTTPS リスナー（ポート 443）設定
+# 6. HTTPS リスナー（port: 443）
+#    certificate_arn に aws_acm_certificate.cert.arn を直接指定
 resource "aws_lb_listener" "https_listener" {
   load_balancer_arn = aws_lb.alb.arn
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = aws_acm_certificate_validation.cert_validation.certificate_arn
+  certificate_arn   = aws_acm_certificate.cert.arn
 
   default_action {
     type             = "forward"
@@ -100,7 +89,7 @@ resource "aws_lb_listener" "https_listener" {
   }
 }
 
-# HTTP リスナー（ポート 80）から HTTPS へのリダイレクト設定
+# 7. HTTP リスナー（port: 80） → HTTPS リダイレクト
 resource "aws_lb_listener" "http_listener" {
   load_balancer_arn = aws_lb.alb.arn
   port              = 80
