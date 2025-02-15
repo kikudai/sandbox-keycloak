@@ -108,3 +108,11 @@ terraform plan
 
 出力された alb_dns_name（ALB の DNS 名）を お名前ドットコムの CNAME に設定する。
 その後、HTTPS 用の URL にアクセスして keycloak を確認する。
+
+### EC2 インスタンスに ssh したいとき
+
+```bash
+# pem（秘密鍵）ファイル作成
+terraform output -json | jq -r '.keypair_private_key.value' > ~/.ssh/sandbox-keycloak.pem
+ssh -i ~/.ssh/sandbox-keycloak.pem ec2-user@xxx.xxx.xxx.xxx
+```
