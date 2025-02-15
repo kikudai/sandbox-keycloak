@@ -1,9 +1,10 @@
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["137112412989"]
+
   filter {
     name   = "name"
-    values = ["al2023-ami-kernel-default-*"]
+    values = ["al2023-ami-2023.6-*kernel-6.1-arm64"]
   }
   filter {
     name   = "virtualization-type"
@@ -11,7 +12,7 @@ data "aws_ami" "amazon_linux" {
   }
   filter {
     name   = "architecture"
-    values = ["x86_64"]
+    values = ["arm64"]
   }
 }
 
@@ -44,7 +45,7 @@ resource "aws_security_group" "ec2_sg" {
 
 resource "aws_instance" "keycloak" {
   ami                         = data.aws_ami.amazon_linux.id
-  instance_type               = "t2.micro"
+  instance_type               = "t4g.micro"  # ARM ベースのインスタンス
   subnet_id                   = var.subnet_id
   vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
   key_name                    = var.key_name
@@ -57,6 +58,7 @@ dnf update -y
 dnf install -y docker
 systemctl enable --now docker
 usermod -a -G docker ec2-user
+# Keycloak コンテナをホストの 80 番ポートにマッピング（内部では 8080 で動作）
 docker run -d --name keycloak -p 80:8080 quay.io/keycloak/keycloak:17.0.1 start-dev
 EOF
 
