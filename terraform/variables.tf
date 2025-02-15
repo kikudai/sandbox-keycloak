@@ -18,3 +18,13 @@ variable "domain_name" {
   description = "カスタムドメイン名（例: keycloak.example.com）"
   type        = string
 }
+
+variable "keycloak_admin" {
+  description = "Keycloak admin username"
+  type        = string
+}
+
+variable "keycloak_admin_password" {
+  description = "Keycloak admin password"
+  type        = string
+}
