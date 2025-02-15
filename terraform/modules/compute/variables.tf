@@ -3,11 +3,6 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "ami_id" {
-  description = "EC2 に使用する AMI ID"
-  type        = string
-}
-
 variable "instance_type" {
   description = "EC2 インスタンスタイプ"
   type        = string
