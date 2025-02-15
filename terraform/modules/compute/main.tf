@@ -4,12 +4,15 @@ data "aws_ami" "amazon_linux" {
 
   filter {
     name   = "name"
-    values = ["al2023-ami-2023.6-*kernel-6.1-arm64"]
+    values = ["al2023-ami-2023.6.*-kernel-6.1-arm64"]
+
   }
+
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
   }
+
   filter {
     name   = "architecture"
     values = ["arm64"]
@@ -45,7 +48,7 @@ resource "aws_security_group" "ec2_sg" {
 
 resource "aws_instance" "keycloak" {
   ami                         = data.aws_ami.amazon_linux.id
-  instance_type               = "t4g.micro"  # ARM ベースのインスタンス
+  instance_type               = "t4g.micro"  # ARM 用インスタンス
   subnet_id                   = var.subnet_id
   vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
   key_name                    = var.key_name
