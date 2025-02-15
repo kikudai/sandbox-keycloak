@@ -10,20 +10,26 @@ variable "vpc_name" {
   default     = "keycloak-vpc"
 }
 
-variable "subnet_cidr" {
-  description = "パブリックサブネットの CIDR ブロック"
+variable "public_subnet_a_cidr" {
+  description = "パブリックサブネット A の CIDR ブロック"
   type        = string
   default     = "10.1.1.0/24"
 }
 
-variable "subnet_name" {
-  description = "パブリックサブネットの名前"
+variable "public_subnet_c_cidr" {
+  description = "パブリックサブネット C の CIDR ブロック"
   type        = string
-  default     = "keycloak-public-subnet"
+  default     = "10.1.2.0/24"
 }
 
-variable "availability_zone" {
-  description = "利用する Availability Zone"
+variable "availability_zone_a" {
+  description = "パブリックサブネット A の Availability Zone"
   type        = string
   default     = "ap-northeast-1a"
+}
+
+variable "availability_zone_c" {
+  description = "パブリックサブネット C の Availability Zone"
+  type        = string
+  default     = "ap-northeast-1c"
 }

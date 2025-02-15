@@ -1,7 +1,14 @@
 output "vpc_id" {
-  value = aws_vpc.this.id
+  description = "作成された VPC の ID"
+  value       = aws_vpc.this.id
 }
 
-output "subnet_id" {
-  value = aws_subnet.public.id
+output "public_subnet_a_id" {
+  description = "パブリックサブネット A の ID"
+  value       = aws_subnet.public_a.id
+}
+
+output "public_subnet_c_id" {
+  description = "パブリックサブネット C の ID"
+  value       = aws_subnet.public_c.id
 }

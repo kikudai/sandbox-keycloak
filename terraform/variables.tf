@@ -18,9 +18,3 @@ variable "domain_name" {
   description = "カスタムドメイン名（例: keycloak.example.com）"
   type        = string
 }
-
-variable "manual_validation_fqdns" {
-  description = "手動で作成した ACM DNS 検証レコード FQDN のリスト"
-  type        = list(string)
-  default     = []
-}
