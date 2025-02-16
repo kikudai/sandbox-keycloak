@@ -76,10 +76,12 @@ resource "aws_instance" "keycloak" {
           - KC_BOOTSTRAP_ADMIN_USERNAME=${var.keycloak_admin}
           - KC_BOOTSTRAP_ADMIN_PASSWORD=${var.keycloak_admin_password}
           - KC_HOSTNAME=https://keycloak.kikudai.work
-          - KC_HOSTNAME_DEBUG=true
-          - KC_LOG_LEVEL=debug
+    #      - KC_HOSTNAME_DEBUG=true
+    #      - KC_LOG_LEVEL=debug
         ports:
           - "80:8080"
+        volumes:
+          - ./data:/opt/keycloak/data
         command:
           - start-dev
     EOL
